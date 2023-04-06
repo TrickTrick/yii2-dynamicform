@@ -267,7 +267,7 @@
 
         $(widgetOptionsRoot.widgetItem).each(function(index) {
             var $item = $(this);
-            $(this).find('*').each(function() {
+            $item.find('*').each(function() {
                 // update "id" attribute
                 _updateAttrID($(this), index);
 
