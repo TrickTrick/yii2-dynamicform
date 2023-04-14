@@ -55,7 +55,6 @@
     };
 
     var _parseTemplate = function(widgetOptions) {
-
         var $template = $(widgetOptions.template);
         $template.find('div[data-dynamicform]').each(function(){
             var widgetOptions = eval($(this).attr('data-dynamicform'));
@@ -66,17 +65,36 @@
         });
 
         $template.find('input, textarea, select').each(function() {
-            $(this).val('');
-        });
+            if ($(this).is(':checkbox') || $(this).is(':radio')) {
+                var type         = ($(this).is(':checkbox')) ? 'checkbox' : 'radio';
+                var inputName    = $(this).attr('name');
+                var $inputHidden = $template.find('input[type="hidden"][name="' + inputName + '"]').first();
+                var count        = $template.find('input[type="' + type +'"][name="' + inputName + '"]').length;
 
-        $template.find('input[type="checkbox"], input[type="radio"]').each(function() {
-            var inputName = $(this).attr('name');
-            var $inputHidden = $template.find('input[type="hidden"][name="' + inputName + '"]').first();
-            if ($inputHidden) {
-                $(this).val(1);
-                $inputHidden.val(0);
+                if ($inputHidden && count === 1) {
+                    $(this).val(1);
+                    $inputHidden.val(0);
+                }
+
+                $(this).prop('checked', false);
+            } else if($(this).is('select')) {
+                $(this).find('option:selected').removeAttr("selected");
+            } else {
+                $(this).val('');
             }
         });
+
+        // remove "error/success" css class
+        var yiiActiveFormData = $('#' + widgetOptions.formId).yiiActiveForm('data');
+        if (typeof yiiActiveFormData !== "undefined" && typeof yiiActiveFormData.settings !== "undefined" ) {
+            if(typeof yiiActiveFormData.settings.errorCssClass !== "undefined" && yiiActiveFormData.settings.errorCssClass.length > 0) {
+                $template.find('.' + yiiActiveFormData.settings.errorCssClass).removeClass(yiiActiveFormData.settings.errorCssClass);
+            }
+
+            if(typeof yiiActiveFormData.settings.successCssClass !== "undefined" && yiiActiveFormData.settings.successCssClass.length > 0) {
+                $template.find('.' + yiiActiveFormData.settings.successCssClass).removeClass(yiiActiveFormData.settings.successCssClass);
+            }
+        }
 
         return $template;
     };
@@ -103,12 +121,7 @@
         var count = _count($elem, widgetOptions);
 
         if (count < widgetOptions.limit) {
-            if (count == 0) {
-                $toclone = $(widgetOptions.template);
-            } else {
-                $toclone = $(widgetOptions.widgetItem).first();
-            }
-
+            $toclone = $(widgetOptions.template);
             $newclone = $toclone.clone(false, false);
 
             // Distinct dynamic form items recursively
